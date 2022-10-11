@@ -37,14 +37,27 @@ class AlienInvanshion:
         self.bullety = self.shipy + self.ship_recty
         self.bullet_rectx = 3
         self.bullet_recty = 2
+        
+        #health
+        self.health = 3
+        self.healthx = 2
+        self.healthy = 2
+        self.health_rectx = 2
+        self.health_recty = 2
+        # score
+        self.score = 0
     def start_game(self):
         # початок гри та головний цикл
         self._draw_aliens()
         while self.game_over:
+            if not self.health:
+                self.game_over = 0
             self.map()
             self._move_aliens()
             self._draw_bullet()
             self._draw_ship()
+            self._draw_score()
+            self._draw_health()
             #self.display.invert(1)
             #utime.sleep(0.3)
             self.display.show()
@@ -54,6 +67,8 @@ class AlienInvanshion:
         
         self.display.text("Game", 3,3,1)
         self.display.text("over", 3, 13, 1)
+        self.display.text(f"score:", 3, 23, 1)
+        self.display.text(f"{self.score}", 3, 33, 1)
         self.display.show()
             
     def _move_aliens(self):
@@ -71,10 +86,10 @@ class AlienInvanshion:
                     self.b2 = b[1]
                     if self.b1 >= 64 - self.alienwidth:self.x1 = 1; self.y1 = 1; break
                     if self.b1 <= 0: self.x1 = 0; self.y1 = 1; break
-                    if self.b2 >= 48 - self.alienheight: self.game_over = 0
+                    if self.b2 >= 48 - self.alienheight: self.health -= 1; self.group_aliens = []
                     if self.b2 + self.ship_recty >= self.shipy:
                         if self.b1 >= self.shipx and self.b1 <= self.shipx + self.ship_rectx:
-                            self.game_over = 0
+                            self.health -= 1; self.group_aliens = []
                     
                 if self.x1: self.x -= 1
                 else: self.x += 1
@@ -82,19 +97,19 @@ class AlienInvanshion:
 
                 if self.y  >= self.bullety and self.y + 3 <= self.bullety + self.bullet_recty:
                     if self.x >= self.bulletx and self.x <= self.bulletx + self.bullet_rectx:
-                        self.bullety = self.shipy - 1; self.bulletx = self.shipx
+                        self.bullety = self.shipy - 1; self.bulletx = self.shipx; self.score += 1
                     else: self.group_aliens2.append([self.x,self.y])
                 elif self.y + 3 >= self.bullety and self.y + 3 <= self.bullety + self.bullet_recty:
                     if self.x >= self.bulletx and self.x + 3 <= self.bulletx + self.bullet_rectx:
-                        self.bullety = self.shipy - 1; self.bulletx = self.shipx
+                        self.bullety = self.shipy - 1; self.bulletx = self.shipx; self.score += 1
                     else: self.group_aliens2.append([self.x,self.y])
                 elif self.y + 3 >= self.bullety and self.y <= self.bullety + self.bullet_recty:
                     if self.x >= self.bulletx and self.x + 3 <= self.bulletx + self.bullet_rectx:
-                        self.bullety = self.shipy - 1; self.bulletx = self.shipx
+                        self.bullety = self.shipy - 1; self.bulletx = self.shipx; self.score += 1
                     else: self.group_aliens2.append([self.x,self.y])
                 elif self.y >= self.bullety and self.y <= self.bullety+ self.bullet_rectx:
                     if self.x + 3 >= self.bulletx and self.x + 3 <= self.bulletx:
-                        self.bullety = self.shipy- 1; self.bulletx = self.shipx
+                        self.bullety = self.shipy- 1; self.bulletx = self.shipx; self.score += 1
                     else: self.group_aliens2.append([self.x,self.y])
                 else: self.group_aliens2.append([self.x,self.y])
             
@@ -103,11 +118,15 @@ class AlienInvanshion:
                 #self.display.show()
                 # добавлення прибульця в допоміжний список
              
-
-            self.group_aliens = self.group_aliens2
-            self.group_aliens2 = []
+            if self.group_aliens:
+                self.group_aliens = self.group_aliens2
+                self.group_aliens2 = []
+            else:
+                self.display.fill(0)
+                self.group_aliens = []
+                self.group_aliens2 = []
             
-        else: self._draw_aliens(); self.bullety = self.shipy + 1; utime.sleep(1)
+        else: self.group_aliens = [];self.group_aliens2 = [];self._draw_aliens(); self.bullety = self.shipy + 1; utime.sleep(1)
     def _draw_aliens(self):
         # малює всіх прибульців та задає їм координати
         for i in range(self.row):
@@ -130,9 +149,16 @@ class AlienInvanshion:
             self.bulletx = self.shipx
         else: self.bullety -= 1
     
+    def _draw_score(self):
+        self.display.text(f"{self.score}", 45, 2, 1)
+    
+    def _draw_health(self):
+        for i in range(0, self.health):
+            self.display.fill_rect(self.healthx, self.healthy, self.health_rectx, self.health_recty, 1)
+            self.healthx += self.health_rectx + 2
+        self.healthx = 2
     def map(self):
         adc = ADC(0)
         self.scaled_value = (adc.read() - 0) * (60 - 0) // (1024 - 0) + 0
 
 AlienInvanshion().start_game()
-
