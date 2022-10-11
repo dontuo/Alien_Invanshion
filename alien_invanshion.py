@@ -31,19 +31,22 @@ class AlienInvanshion:
         self.ship_rectx = 4
         self.ship_recty = 4
         self.add_alien = 1
+        self.scaled_value = self.shipx
         # bullet
         self.bulletx = self.shipx + 1
-        self.bullety = self.shipy + self.ship_rectx
+        self.bullety = self.shipy + self.ship_recty
         self.bullet_rectx = 3
         self.bullet_recty = 2
     def start_game(self):
         # початок гри та головний цикл
         self._draw_aliens()
         while self.game_over:
+            self.map()
             self._move_aliens()
-            #utime.sleep(0.1)
+            self._draw_bullet()
             self._draw_ship()
             #self.display.invert(1)
+            #utime.sleep(0.3)
             self.display.show()
             
             
@@ -56,42 +59,55 @@ class AlienInvanshion:
     def _move_aliens(self):
         self.display.fill(0)
         #рух прибульців
-        self._draw_bullet()
-        for i in self.group_aliens:
-            self.x = i[0]
-            self.y = i[1]
-            
-            self.num_alien = 0
-            # перевірка вектора прибульців
-            for b in self.group_aliens:
-                self.b1 = b[0]
-                self.b2 = b[1]
-                if self.b1 >= 64 - self.alienwidth:self.x1 = 1; self.y1 = 1; break
-                if self.b1 <= 0: self.x1 = 0; self.y1 = 1; break
-                if self.b2 >= 48 - self.alienheight: self.game_over = 0
+        if self.group_aliens:
+            for i in self.group_aliens:
+                self.x = i[0]
+                self.y = i[1]
                 
-            if self.x1: self.x -= 1
-            else: self.x += 1
-            if self.y1: self.y += self.alienwidth; self.y1 = 0
+                self.num_alien = 0
+                # перевірка вектора прибульців
+                for b in self.group_aliens:
+                    self.b1 = b[0]
+                    self.b2 = b[1]
+                    if self.b1 >= 64 - self.alienwidth:self.x1 = 1; self.y1 = 1; break
+                    if self.b1 <= 0: self.x1 = 0; self.y1 = 1; break
+                    if self.b2 >= 48 - self.alienheight: self.game_over = 0
+                    if self.b2 + self.ship_recty >= self.shipy:
+                        if self.b1 >= self.shipx and self.b1 <= self.shipx + self.ship_rectx:
+                            self.game_over = 0
+                    
+                if self.x1: self.x -= 1
+                else: self.x += 1
+                if self.y1: self.y += self.alienwidth; self.y1 = 0
 
-            # намалювати прибульця
-            self.display.fill_rect(self.x, self.y, self.alienwidth, self.alienheight, 1)
-            
-            # добавлення прибульця в допоміжний список
-            if self.y + 3 >= self.bullety and self.y <= self.bullety + self.bullet_recty - 1:
-                if self.x > self.bulletx and self.x < self.bulletx + self.bullet_rectx:
-                    self.bullety = self.shipy + self.ship_recty
+                if self.y  >= self.bullety and self.y + 3 <= self.bullety + self.bullet_recty:
+                    if self.x >= self.bulletx and self.x <= self.bulletx + self.bullet_rectx:
+                        self.bullety = self.shipy - 1; self.bulletx = self.shipx
+                    else: self.group_aliens2.append([self.x,self.y])
+                elif self.y + 3 >= self.bullety and self.y + 3 <= self.bullety + self.bullet_recty:
+                    if self.x >= self.bulletx and self.x + 3 <= self.bulletx + self.bullet_rectx:
+                        self.bullety = self.shipy - 1; self.bulletx = self.shipx
+                    else: self.group_aliens2.append([self.x,self.y])
+                elif self.y + 3 >= self.bullety and self.y <= self.bullety + self.bullet_recty:
+                    if self.x >= self.bulletx and self.x + 3 <= self.bulletx + self.bullet_rectx:
+                        self.bullety = self.shipy - 1; self.bulletx = self.shipx
+                    else: self.group_aliens2.append([self.x,self.y])
+                elif self.y >= self.bullety and self.y <= self.bullety+ self.bullet_rectx:
+                    if self.x + 3 >= self.bulletx and self.x + 3 <= self.bulletx:
+                        self.bullety = self.shipy- 1; self.bulletx = self.shipx
+                    else: self.group_aliens2.append([self.x,self.y])
                 else: self.group_aliens2.append([self.x,self.y])
-            elif self.y + 3 >= self.bullety and self.y + 3 <= self.bullety + self.bullet_recty:
-                if self.x + 3 >= self.bulletx and self.x + 3 <= self.bulletx + self.bullet_rectx:
-                    self.bullety = self.shipy + self.ship_recty
-            elif self.y + 3 >= self.bullety and self.y + 3 <= self.bullety + self.bullet_recty:
-                if self.x >= self.bulletx and self.x <= self.bulletx + self.bullet_rectx:
-                    self.bullety = self.shipy + self.ship_recty
-            else: self.group_aliens2.append([self.x,self.y])
+            
+                # намалювати прибульця
+                self.display.fill_rect(self.x, self.y, self.alienwidth, self.alienheight, 1)
+                #self.display.show()
+                # добавлення прибульця в допоміжний список
+             
 
-        self.group_aliens = self.group_aliens2
-        self.group_aliens2 = []
+            self.group_aliens = self.group_aliens2
+            self.group_aliens2 = []
+            
+        else: self._draw_aliens(); self.bullety = self.shipy + 1; utime.sleep(1)
     def _draw_aliens(self):
         # малює всіх прибульців та задає їм координати
         for i in range(self.row):
@@ -106,13 +122,17 @@ class AlienInvanshion:
         
     def _draw_ship(self):
         self.display.fill_rect(self.shipx, self.shipy, self.ship_rectx, self.ship_recty, 1)
-    
+        self.shipx = self.scaled_value
     def _draw_bullet(self):
         self.display.fill_rect(self.bulletx, self.bullety, self.bullet_recty,self.bullet_rectx, 1)
         if self.bullety <= 0:
-            self.bullety = self.shipy + self.ship_recty
+            self.bullety = self.shipy + 1
+            self.bulletx = self.shipx
         else: self.bullety -= 1
-
+    
+    def map(self):
+        adc = ADC(0)
+        self.scaled_value = (adc.read() - 0) * (60 - 0) // (1024 - 0) + 0
 
 AlienInvanshion().start_game()
 
